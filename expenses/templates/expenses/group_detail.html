@@ -1,0 +1,269 @@
+<!-- expenses/templates/expenses/group_detail.html -->
+
+{% extends 'expenses/base.html' %}
+
+{% block title %}{{ group.name }} - Expense Splitter{% endblock %}
+
+{% block content %}
+
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>{{ group.name }}</h2>
+        <p class="text-muted">{{ group.description }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'add_expense' group.id %}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Add Expense
+        </a>
+        <a href="{% url 'settle_debt' group.id %}" class="btn btn-warning me-2">
+            <i class="bi bi-cash-stack"></i> Settle Debt
+        </a>
+        <a href="{% url 'export_expenses' group.id %}" class="btn btn-info">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>${{ statistics.total_spent|floatformat:2 }}</h3>
+                <p class="mb-0">Total Spent</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ statistics.expense_count }}</h3>
+                <p class="mb-0">Total Expenses</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ group.members.count }}</h3>
+                <p class="mb-0">Members</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Members & Their Spending Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-people"></i> Members & Their Spending</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Total Paid</th>
+                        <th>Total Owes</th>
+                        <th>Net Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member, stats in statistics.member_stats.items %}
+                    <tr>
+                        <td><strong>{{ member }}</strong></td>
+                        <td class="text-success">${{ stats.paid|floatformat:2 }}</td>
+                        <td class="text-danger">${{ stats.owes|floatformat:2 }}</td>
+                        <td>
+                            {% if stats.balance > 0 %}
+                                <span class="badge bg-success">+${{ stats.balance|floatformat:2 }}</span>
+                            {% elif stats.balance < 0 %}
+                                <span class="badge bg-danger">${{ stats.balance|floatformat:2 }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">$0.00</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Simplified Balances Card -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5><i class="bi bi-calculator"></i> Simplified Settlements</h5>
+        <small>Minimum transactions needed to settle all debts</small>
+    </div>
+    <div class="card-body">
+        {% if simplified_balances %}
+            <div class="list-group">
+                {% for transaction in simplified_balances %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>{{ transaction.from }}</strong> 
+                        <i class="bi bi-arrow-right"></i> 
+                        <strong>{{ transaction.to }}</strong>
+                    </span>
+                    <span class="badge bg-danger rounded-pill">${{ transaction.amount|floatformat:2 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-success mb-0">
+                <i class="bi bi-check-circle"></i> All settled up! Everyone is even. 🎉
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Detailed Balances Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-list-check"></i> Detailed Balances</h5>
+    </div>
+    <div class="card-body">
+        {% if balances %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Person</th>
+                            <th>Owes To</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user, debts in balances.items %}
+                            {% for creditor, amount in debts.items %}
+                                {% if amount > 0 %}
+                                <tr>
+                                    <td>{{ user }}</td>
+                                    <td>{{ creditor }}</td>
+                                    <td class="text-danger">${{ amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">All settled up! 🎉</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Expenses List with Search -->
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> Expenses</h5>
+            </div>
+            <div class="col-md-6">
+                <input type="text" id="searchExpense" class="form-control" placeholder="Search expenses...">
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if expenses %}
+            <div class="list-group" id="expenseList">
+                {% for expense in expenses %}
+                <div class="list-group-item expense-item">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">{{ expense.description }}</h6>
+                            <p class="mb-1 small text-muted">
+                                Paid by <strong>{{ expense.paid_by.username }}</strong> on {{ expense.date|date:"M d, Y" }}
+                            </p>
+                            <small class="text-muted">Split among {{ expense.splits.count }} member(s)</small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-success d-block">${{ expense.amount }}</strong>
+                            <button class="btn btn-sm btn-outline-danger mt-2" 
+                                    onclick="deleteExpense({{ expense.id }}, '{{ expense.description }}')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">No expenses yet. Add one to get started!</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Back Button -->
+<div class="mt-3">
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Search functionality
+document.getElementById('searchExpense')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const expenses = document.querySelectorAll('.expense-item');
+    
+    expenses.forEach(expense => {
+        const text = expense.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            expense.style.display = '';
+        } else {
+            expense.style.display = 'none';
+        }
+    });
+});
+
+// Delete expense function
+function deleteExpense(expenseId, description) {
+    if (confirm(`Are you sure you want to delete "${description}"?`)) {
+        fetch(`/delete-expense/${expenseId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Expense deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting expense: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

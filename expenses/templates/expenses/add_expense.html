@@ -1,0 +1,66 @@
+<!-- expenses/templates/expenses/add_expense.html -->
+
+{% extends 'expenses/base.html' %}
+
+{% block title %}Add Expense - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4><i class="bi bi-plus-circle"></i> Add New Expense</h4>
+                <p class="mb-0 small">Group: {{ group.name }}</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" 
+                               placeholder="e.g., Dinner at restaurant" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="amount" name="amount" 
+                               step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" 
+                               value="{{ today }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Split Between</label>
+                        {% for member in group.members.all %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="split_members" 
+                                   value="{{ member.id }}" id="member{{ member.id }}" checked>
+                            <label class="form-check-label" for="member{{ member.id }}">
+                                {{ member.username }} {% if member.get_full_name %}({{ member.get_full_name }}){% endif %}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> The amount will be split equally among selected members.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Add Expense
+                        </button>
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!-- expenses/templates/expenses/settle_debt.html -->
+
+{% extends 'expenses/base.html' %}
+
+{% block title %}Settle Debt - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4><i class="bi bi-cash-stack"></i> Settle Debt</h4>
+                <p class="mb-0 small">Group: {{ group.name }}</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="paid_to" class="form-label">Pay To</label>
+                        <select class="form-select" id="paid_to" name="paid_to" required>
+                            <option value="">Select member...</option>
+                            {% for member in group.members.all %}
+                                {% if member != request.user %}
+                                    <option value="{{ member.id }}">
+                                        {{ member.username }} {% if member.get_full_name %}({{ member.get_full_name }}){% endif %}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount ($)</label>
+                        <input type="number" class="form-control" id="amount" name="amount" 
+                               step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> This will mark your debts to this person as settled.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Settle Payment
+                        </button>
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

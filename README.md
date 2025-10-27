@@ -9,7 +9,7 @@ A Django-based web application to split bills and track shared expenses with fri
 
 ## 🌟 Live Demo
 
-🔗 **[Live Application](#)** _(Add your deployment link here)_
+🔗 **[Live Application](https://Ishika123.pythonanywhere.com/)** - Try it now!
 
 ## 📸 Screenshots
 
@@ -723,7 +723,7 @@ Version 3.0 (Future)
    Team features
 
 🔗 Useful Links
-Live Demo: [Add your deployment URL]
+Live Demo: https://yourusername.pythonanywhere.com/
 
 🎯 Project Goals
 This project was built to:

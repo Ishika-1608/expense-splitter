@@ -152,15 +152,12 @@ def logout_view(request):
     messages.success(request, 'Logged out successfully!')
     return redirect('login')
 
-# Dashboard and Group Views
 @login_required
 def dashboard_view(request):
     groups = Group.objects.filter(members=request.user).order_by('-created_at')
-    all_users = User.objects.exclude(id=request.user.id)
     
     context = {
         'groups': groups,
-        'all_users': all_users,
     }
     return render(request, 'expenses/dashboard.html', context)
 
@@ -169,7 +166,7 @@ def create_group_view(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         description = request.POST.get('description', '')
-        member_ids = request.POST.getlist('members')
+        member_usernames = request.POST.get('member_usernames', '')
         
         group = Group.objects.create(
             name=name,
@@ -180,12 +177,36 @@ def create_group_view(request):
         # Add creator as member
         group.members.add(request.user)
         
-        # Add selected members
-        if member_ids:
-            for member_id in member_ids:
-                group.members.add(member_id)
+        # Add members by username
+        if member_usernames:
+            # Split by comma and clean whitespace
+            usernames = [username.strip() for username in member_usernames.split(',')]
+            
+            not_found = []
+            added_count = 0
+            
+            for username in usernames:
+                if username:  # Skip empty strings
+                    try:
+                        user = User.objects.get(username=username)
+                        if user != request.user:  # Don't add creator again
+                            group.members.add(user)
+                            added_count += 1
+                    except User.DoesNotExist:
+                        not_found.append(username)
+            
+            # Success message
+            if added_count > 0:
+                messages.success(request, f'Group "{name}" created! Added {added_count} member(s).')
+            else:
+                messages.success(request, f'Group "{name}" created successfully!')
+            
+            # Warning for not found users
+            if not_found:
+                messages.warning(request, f'Could not find these users: {", ".join(not_found)}. Check spelling and try adding them later.')
+        else:
+            messages.success(request, f'Group "{name}" created successfully! You can add members from the group page.')
         
-        messages.success(request, f'Group "{name}" created successfully!')
         return redirect('dashboard')
     
     return redirect('dashboard')
@@ -440,3 +461,54 @@ def profile_view(request):
         'total_paid': total_paid,
     }
     return render(request, 'expenses/profile.html', context)
+
+# expenses/views.py - ADD at the bottom
+
+@login_required
+def add_members_view(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+    
+    # Check if user is member of the group
+    if not group.members.filter(id=request.user.id).exists():
+        messages.error(request, 'You must be a member of this group.')
+        return redirect('dashboard')
+    
+    # Only group creator can add members
+    if group.created_by != request.user:
+        messages.error(request, 'Only the group creator can add members.')
+        return redirect('group_detail', group_id=group_id)
+    
+    if request.method == 'POST':
+        member_usernames = request.POST.get('member_usernames', '')
+        
+        if member_usernames:
+            usernames = [username.strip() for username in member_usernames.split(',')]
+            
+            added = []
+            already_member = []
+            not_found = []
+            
+            for username in usernames:
+                if username:
+                    try:
+                        user = User.objects.get(username=username)
+                        if user in group.members.all():
+                            already_member.append(username)
+                        else:
+                            group.members.add(user)
+                            added.append(username)
+                    except User.DoesNotExist:
+                        not_found.append(username)
+            
+            # Success messages
+            if added:
+                messages.success(request, f'Successfully added: {", ".join(added)}')
+            if already_member:
+                messages.info(request, f'Already members: {", ".join(already_member)}')
+            if not_found:
+                messages.warning(request, f'Users not found: {", ".join(not_found)}. Please check the usernames.')
+            
+            return redirect('group_detail', group_id=group_id)
+    
+    context = {'group': group}
+    return render(request, 'expenses/add_members.html', context)

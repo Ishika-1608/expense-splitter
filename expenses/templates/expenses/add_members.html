@@ -1,0 +1,66 @@
+<!-- expenses/templates/expenses/add_members.html -->
+
+{% extends 'expenses/base.html' %}
+
+{% block title %}Add Members - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="bi bi-person-plus"></i> Add Members to Group</h4>
+                <p class="mb-0 small">{{ group.name }}</p>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- Current Members Display -->
+                <div class="mb-4">
+                    <h6>Current Members ({{ group.members.count }})</h6>
+                    <div>
+                        {% for member in group.members.all %}
+                            <span class="badge bg-secondary me-1 mb-1">
+                                {{ member.username }}
+                                {% if member == group.created_by %}
+                                    <i class="bi bi-star-fill" title="Creator"></i>
+                                {% endif %}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Add Members Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="member_usernames" class="form-label">Add New Members</label>
+                        <input type="text" class="form-control" id="member_usernames" 
+                               name="member_usernames" required
+                               placeholder="john, alice, bob"
+                               autofocus>
+                        <small class="text-muted">Enter usernames separated by commas</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Tip:</strong> Make sure to enter exact usernames. 
+                        Users who don't exist will be skipped.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Add Members
+                        </button>
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Group
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

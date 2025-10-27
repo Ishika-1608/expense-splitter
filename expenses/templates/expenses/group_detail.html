@@ -55,8 +55,13 @@
 
 <!-- Members & Their Spending Card -->
 <div class="card mb-4">
-    <div class="card-header">
-        <h5><i class="bi bi-people"></i> Members & Their Spending</h5>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-people"></i> Members & Their Spending</h5>
+        {% if group.created_by == request.user %}
+            <a href="{% url 'add_members' group.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-person-plus"></i> Add Members
+            </a>
+        {% endif %}
     </div>
     <div class="card-body">
         <div class="table-responsive">

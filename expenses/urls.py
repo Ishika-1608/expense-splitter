@@ -7,7 +7,7 @@ from .views import (
     register_view, login_view, logout_view, dashboard_view,
     create_group_view, group_detail_view, add_expense_view,
     settle_debt_view, delete_expense_view, export_expenses_csv,
-    home_view, profile_view
+    home_view, profile_view, add_members_view
 )
 
 router = DefaultRouter()
@@ -29,6 +29,7 @@ urlpatterns = [
     path('group/<int:group_id>/add-expense/', add_expense_view, name='add_expense'),
     path('group/<int:group_id>/settle-debt/', settle_debt_view, name='settle_debt'),
     path('group/<int:group_id>/export/', export_expenses_csv, name='export_expenses'),
+    path('group/<int:group_id>/add-members/', add_members_view, name='add_members'),
     path('delete-expense/<int:expense_id>/', delete_expense_view, name='delete_expense'),
     
     # API URLs
